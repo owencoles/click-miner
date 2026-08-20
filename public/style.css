@@ -1,8 +1,8 @@
 /* ===========================================================
    Click Miner — retro 90s / early-2000s theme.
    Chunky beveled "Windows 95" panels, terminal-y monospace for
-   hash data, tiled background, blinking bits. Retro skin, not
-   retro usability.
+   hash data, blinking bits, white page background. Retro skin,
+   not retro usability.
    =========================================================== */
 
 :root {
@@ -41,27 +41,8 @@ html, body {
 body {
   font-family: var(--font-ui);
   color: #101010;
-  background-color: var(--accent-purple);
-  background-image:
-    repeating-linear-gradient(45deg, rgba(255,255,255,0.06) 0 2px, transparent 2px 14px),
-    linear-gradient(160deg, var(--accent-purple) 0%, var(--accent-teal) 45%, var(--accent-orange) 100%);
+  background-color: #ffffff;
   min-height: 100vh;
-}
-
-/* ---------- beveled 3D panel mixins (via utility classes) ---------- */
-
-.bevel-out {
-  border-top: 2px solid var(--chrome-light);
-  border-left: 2px solid var(--chrome-light);
-  border-right: 2px solid var(--chrome-darker);
-  border-bottom: 2px solid var(--chrome-darker);
-}
-
-.bevel-in {
-  border-top: 2px solid var(--chrome-darker);
-  border-left: 2px solid var(--chrome-darker);
-  border-right: 2px solid var(--chrome-light);
-  border-bottom: 2px solid var(--chrome-light);
 }
 
 /* ---------- marquee ---------- */
@@ -102,38 +83,63 @@ body {
 .title {
   font-family: var(--font-heading);
   font-size: 44px;
-  color: #fff;
-  text-shadow: 3px 3px 0 var(--title-start), -1px -1px 0 rgba(255,255,255,0.4);
+  color: var(--title-start);
+  text-shadow: 2px 2px 0 var(--chrome-light), 3px 3px 0 var(--chrome-darker);
   margin: 0;
   letter-spacing: 2px;
 }
 
-.live-dot {
-  font-family: var(--font-ui);
-  font-size: 14px;
-  vertical-align: super;
-  color: var(--accent-red);
-  background: #fff;
-  border-radius: 3px;
-  padding: 2px 6px;
-  margin-left: 8px;
-  border: 1px solid var(--chrome-darker);
-}
-
-.blink {
-  animation: blink 1.1s steps(1) infinite;
-}
-
-@keyframes blink {
-  50% { opacity: 0.15; }
-}
-
 .tagline {
   font-family: var(--font-display);
-  color: #fff;
+  color: var(--chrome-darker);
   font-size: 18px;
   margin: 4px 0 0;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+/* ---------- tab bar (one connected strip — equal-width tabs, no
+   gaps, aligned flush with the page content below) ---------- */
+
+.tab-bar {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 14px;
+  display: flex;
+}
+
+.tab-btn {
+  flex: 1;
+  font-family: var(--font-ui);
+  font-weight: bold;
+  font-size: 13px;
+  background: var(--chrome-dark);
+  color: #e8eaed;
+  padding: 8px 12px;
+  text-align: center;
+  border-top: 2px solid var(--chrome-light);
+  border-left: 2px solid var(--chrome-light);
+  border-right: 1px solid var(--chrome-darker);
+  border-bottom: none;
+  cursor: pointer;
+  position: relative;
+  top: 2px;
+}
+
+.tab-btn:first-child {
+  border-radius: 4px 0 0 0;
+}
+
+.tab-btn:last-child {
+  border-right: 2px solid var(--chrome-darker);
+  border-radius: 0 4px 0 0;
+}
+
+.tab-btn.active {
+  background: var(--chrome);
+  color: #101010;
+}
+
+.tab-btn:not(.active):hover {
+  background: #7d8388;
 }
 
 /* ---------- layout ---------- */
@@ -145,6 +151,16 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tab-panel.hidden {
+  display: none;
 }
 
 /* ---------- window chrome ---------- */
@@ -171,27 +187,6 @@ body {
   letter-spacing: 0.5px;
 }
 
-.titlebar-btn {
-  font-family: var(--font-ui);
-  font-size: 11px;
-  background: var(--chrome);
-  border-top: 1px solid var(--chrome-light);
-  border-left: 1px solid var(--chrome-light);
-  border-right: 1px solid var(--chrome-darker);
-  border-bottom: 1px solid var(--chrome-darker);
-  width: 18px;
-  height: 16px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.titlebar-btn:active {
-  border-top: 1px solid var(--chrome-darker);
-  border-left: 1px solid var(--chrome-darker);
-  border-right: 1px solid var(--chrome-light);
-  border-bottom: 1px solid var(--chrome-light);
-}
-
 .window-body {
   padding: 12px;
 }
@@ -200,22 +195,17 @@ body {
   display: none;
 }
 
-/* ---------- status window ---------- */
+/* ---------- status strip (persistent, above the tab bar) ---------- */
 
-.status-body {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.status-row {
+.status-strip {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12px;
+  color: var(--chrome-darker);
+  padding: 4px 10px 10px;
 }
 
 .led {
@@ -231,32 +221,6 @@ body {
 .led.ok { background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green); }
 .led.error { background: var(--accent-red); box-shadow: 0 0 6px var(--accent-red); }
 .led.pending { background: #e0c200; box-shadow: 0 0 6px #e0c200; }
-
-.counter-wrap {
-  text-align: center;
-}
-
-.counter-label {
-  font-size: 10px;
-  font-family: var(--font-ui);
-  letter-spacing: 1px;
-  color: var(--chrome-darker);
-  margin-bottom: 2px;
-}
-
-.counter {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: bold;
-  background: #000;
-  color: var(--accent-red);
-  letter-spacing: 3px;
-  padding: 3px 8px;
-  border-top: 2px solid var(--chrome-darker);
-  border-left: 2px solid var(--chrome-darker);
-  border-right: 2px solid var(--chrome-light);
-  border-bottom: 2px solid var(--chrome-light);
-}
 
 /* ---------- forms ---------- */
 
@@ -419,6 +383,24 @@ legend {
   color: #003300;
 }
 
+.nonce-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 130px;
+  padding: 3px 6px;
+  color: #003300;
+  background: #fff;
+  border-top: 2px solid var(--chrome-darker);
+  border-left: 2px solid var(--chrome-darker);
+  border-right: 2px solid var(--chrome-light);
+  border-bottom: 2px solid var(--chrome-light);
+}
+
+.nonce-input:disabled {
+  background: var(--chrome);
+  color: #666;
+}
+
 .header-hex-wrap,
 .last-hash-wrap {
   margin-bottom: 12px;
@@ -445,6 +427,24 @@ legend {
 }
 
 /* ---------- mine window ---------- */
+
+.mine-spotlight {
+  position: relative;
+  border-top: 3px solid var(--chrome-light);
+  border-left: 3px solid var(--chrome-light);
+  border-right: 3px solid var(--chrome-darker);
+  border-bottom: 3px solid var(--chrome-darker);
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.3);
+}
+
+.hashes-submitted {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 11px;
+  font-family: var(--font-ui);
+  color: var(--chrome-darker);
+}
 
 .mine-body {
   display: flex;
@@ -475,16 +475,32 @@ legend {
   text-align: right;
 }
 
+/* The hashrate-share box reuses .log-screen's black/green terminal look,
+   but holds a single (possibly very long, full-decimal) percentage rather
+   than a scrolling log — let it wrap instead of overflowing, and size it
+   for a fixed two lines' worth of text (it will never realistically need
+   more zeroes than that) instead of .log-screen's tall scrolling-log
+   height. Fixed rather than auto so the box doesn't resize as the
+   percentage's length changes over time.
+*/
+#hashrate-share-caption {
+  white-space: normal;
+  word-break: break-all;
+  font-size: 12px; /* matches .header-hex / .last-hash — the other green terminal text */
+  line-height: 14px;
+  height: calc(14px * 2 + 16px); /* two lines + top/bottom padding */
+  overflow-y: hidden;
+}
+
 .mine-controls {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: 10px;
 }
 
 .autoclick-toggle {
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -541,27 +557,68 @@ legend {
   font-weight: bold;
 }
 
-/* ---------- about / construction ---------- */
+/* ---------- learn tab ---------- */
 
-.construction-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 14px 0;
+.learn-body h3 {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  color: var(--title-start);
+  border-bottom: 2px solid var(--chrome-darker);
+  padding-bottom: 4px;
+  margin: 22px 0 8px;
 }
 
-.construction-stripes {
-  flex: 1;
-  height: 14px;
-  background: repeating-linear-gradient(45deg, #000 0 10px, var(--accent-orange) 10px 20px);
+.learn-body h3:first-child {
+  margin-top: 0;
 }
 
-.construction-text {
-  font-family: var(--font-display);
+.learn-body p {
   font-size: 13px;
-  font-weight: bold;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+
+.learn-body ul {
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.learn-body .math {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--terminal-bg);
+  color: var(--terminal-fg);
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  border-top: 2px solid var(--chrome-darker);
+  border-left: 2px solid var(--chrome-darker);
+  border-right: 2px solid var(--chrome-light);
+  border-bottom: 2px solid var(--chrome-light);
+  overflow-x: auto;
   white-space: nowrap;
-  animation: blink 1.4s steps(1) infinite;
+}
+
+.learn-body var {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-weight: bold;
+}
+
+.learn-body code {
+  font-family: var(--font-mono);
+  background: var(--chrome-light);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+
+.learn-body li {
+  margin-bottom: 6px;
+}
+
+.learn-body strong {
+  color: var(--title-start);
 }
 
 .small {
@@ -573,10 +630,26 @@ legend {
 
 .page-footer {
   text-align: center;
-  color: #fff;
+  color: var(--chrome-darker);
   font-size: 12px;
   padding: 14px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.page-footer p {
+  margin: 0 0 6px;
+}
+
+.page-footer p:last-child {
+  margin-bottom: 0;
+}
+
+.page-footer a {
+  color: var(--title-start);
+  font-weight: bold;
+}
+
+#footer-donation-text {
+  font-style: italic;
 }
 
 /* ---------- responsive ---------- */
@@ -584,5 +657,5 @@ legend {
 @media (max-width: 600px) {
   .title { font-size: 30px; }
   .btn-huge { font-size: 20px; padding: 14px 20px; }
-  .status-body { flex-direction: column; }
+  .tab-btn { padding: 8px 6px; font-size: 12px; }
 }

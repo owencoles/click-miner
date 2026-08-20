@@ -1,0 +1,11 @@
+node_modules
+data
+.git
+.gitignore
+*.log
+start9
+umbrel-app.yml
+docker-compose.yml
+README.md
+CLICK-MINER-SPEC.md
+LICENSE

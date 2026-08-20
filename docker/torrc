@@ -1,0 +1,6 @@
+# Minimal Tor client config — Click Miner only needs an outbound SOCKS
+# proxy to reach a remote node's .onion RPC address. We are not hosting
+# a hidden service ourselves.
+SocksPort 127.0.0.1:9050
+DataDirectory /var/lib/tor
+Log notice stdout

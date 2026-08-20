@@ -1,4 +1,7 @@
-# Umbrel app manifest (placeholder — fill in as the app is packaged).
+# Umbrel app manifest. Schema verified against a real shipped Umbrel app
+# (getumbrel/umbrel-apps/btc-rpc-explorer) as of 2026-08 — fields not
+# needed here (gallery, submitter, submission) are omitted rather than
+# faked; add them when this is actually submitted to the app store.
 
 manifestVersion: 1
 id: click-miner
@@ -6,18 +9,21 @@ category: bitcoin
 name: Click Miner
 version: "0.1.0"
 tagline: Be your own miner (lol).
-description: >
-  A free, open-source, educational manual Bitcoin miner. Assemble a real
-  block header from your own node's data, click to hash, and see exactly
-  what mining does — one hash at a time.
+description: >-
+  A free, open-source, educational manual Bitcoin miner. Click a button and
+  the app assembles one real block header from your own node's live data,
+  computes a single SHA256d hash against the current network target, and
+  shows you exactly what mining does — one hash at a time. On the (nearly
+  impossible) chance you find a block, the reward pays out to your own
+  configured address. Not a pool, not competitive, not financial advice —
+  just you against 2^256.
+releaseNotes: "Initial release."
 developer: Click Miner Contributors
 website: ""
 repo: ""
 support: ""
 port: 3000
 gallery: []
-releaseNotes: "Initial scaffold."
+path: ""
 dependencies:
   - bitcoin
-path: ""
-defaultPassword: ""

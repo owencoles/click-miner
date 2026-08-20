@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { WebSocketServer } from 'ws';
 
 import { getSettings, saveSettings } from './settings.js';
+import { getStats, incrementHashes } from './stats.js';
 import { getBlockTemplate, submitBlock, getBlockchainInfo } from './rpc.js';
 import { decodeAddress } from './address.js';
 import { buildCoinbaseTransaction, varInt } from './coinbase.js';
@@ -88,7 +89,6 @@ async function buildCandidate() {
     payoutType,
     time: template.curtime,
     nonce: 0,
-    attempts: 0,
     fetchedAt: Date.now(),
   };
 
@@ -122,7 +122,7 @@ function formatCandidate() {
     target: candidate.target.toString(16).padStart(64, '0'),
     time: candidate.time,
     nonce: candidate.nonce,
-    attempts: candidate.attempts,
+    attempts: getStats().totalHashes,
     headerHex: header.toString('hex'),
     coinbase: {
       txid: candidate.coinbase.txid,
@@ -141,7 +141,7 @@ async function computeStatus() {
   let nodeError = null;
   try {
     const info = await getBlockchainInfo();
-    node = { chain: info.chain, blocks: info.blocks, headers: info.headers };
+    node = { chain: info.chain, blocks: info.blocks, headers: info.headers, difficulty: info.difficulty };
   } catch (err) {
     nodeError = err.message;
   }
@@ -181,7 +181,7 @@ async function handleHash(body) {
   if (Number.isInteger(body.time)) {
     candidate.time = body.time >>> 0;
   }
-  candidate.attempts += 1;
+  const totalHashes = incrementHashes();
 
   const header = currentHeader();
   const hash = sha256d(header);
@@ -190,7 +190,7 @@ async function handleHash(body) {
   const result = {
     nonce: candidate.nonce,
     time: candidate.time,
-    attempts: candidate.attempts,
+    attempts: totalHashes,
     headerHex: header.toString('hex'),
     hash: toDisplayHex(hash),
     leadingZeroBits: countLeadingZeroBits(hash),

@@ -1,16 +1,36 @@
-# Umbrel packaging. Declares the app service and (later) its dependency on
-# the Umbrel Bitcoin Node app for RPC host/port/user/pass env injection.
+# Umbrel packaging. `app_proxy` is Umbrel's own reverse-proxy sidecar —
+# naming a service `app_proxy` and pointing it at our container via
+# APP_HOST/APP_PORT is how Umbrel apps expose a web UI on the dashboard;
+# the app itself does not publish a port directly. RPC connection details
+# come from Umbrel's Bitcoin Node app via the `dependencies` declaration
+# in umbrel-app.yml, injected here as $APP_BITCOIN_* env vars.
+#
+# This file is Umbrel-specific. For plain desktop use, see the Dockerfile
+# and `docker run` instructions in the README instead.
 
 version: "3.7"
 
 services:
+  app_proxy:
+    environment:
+      APP_HOST: click-miner_app_1
+      APP_PORT: 3000
+
   app:
+    # `build: .` works for local/community installs. A real App Store
+    # submission would typically instead reference a pre-built, digest-
+    # pinned image (e.g. yourname/click-miner:0.1.0@sha256:...) published
+    # to a registry, per Umbrel's app submission guidelines.
     build: .
     image: click-miner:latest
     restart: on-failure
-    ports:
-      - "3000:3000"
+    stop_grace_period: 30s
     environment:
-      # TODO: RPC connection env vars, injected by Umbrel when the app
-      # declares a dependency on the Bitcoin Node app.
-      - PORT=3000
+      PORT: 3000
+      DATA_DIR: /data
+      RPC_HOST: $APP_BITCOIN_NODE_IP
+      RPC_PORT: $APP_BITCOIN_RPC_PORT
+      RPC_USER: $APP_BITCOIN_RPC_USER
+      RPC_PASSWORD: $APP_BITCOIN_RPC_PASS
+    volumes:
+      - ${APP_DATA_DIR}/data:/data

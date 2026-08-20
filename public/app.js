@@ -2,20 +2,22 @@
 // click/auto-click loop against the /api/* routes, and a WebSocket client
 // that keeps every connected tab in sync (status, candidate, and hash
 // events) without polling.
+//
+// All user-facing text comes from ./copy.js (see that file to edit any
+// label, message, or paragraph in the app).
 
-const AUTOCLICK_INTERVAL_MS = 600; // slow & capped — for fun, never competitive
+import { COPY } from './copy.js';
+
+const AUTOCLICK_INTERVAL_MS = 1000; // once per second — capped, never competitive
 const WS_RECONNECT_DELAY_MS = 3000;
 
 const el = (id) => document.getElementById(id);
 
 const dom = {
-  liveIndicator: el('live-indicator'),
   statusLed: el('status-led'),
   statusText: el('status-text'),
-  hitCounter: el('hit-counter'),
+  hashesSubmitted: el('hashes-submitted'),
 
-  settingsToggle: el('settings-toggle'),
-  settingsBody: el('settings-body'),
   settingsForm: el('settings-form'),
   settingsMessage: el('settings-message'),
   inputHost: el('input-host'),
@@ -45,12 +47,121 @@ const dom = {
   successBanner: el('success-banner'),
   successDetail: el('success-detail'),
   logScreen: el('log-screen'),
+
+  hashrateShareCaption: el('hashrate-share-caption'),
 };
 
 let candidate = null;
 let targetLeadingZeroBits = 0;
 let autoclickTimer = null;
+// Lifetime hash count, kept in sync with the server's persistent total
+// (see server/stats.js) — also doubles as the WS/HTTP dedupe key below.
 let lastAppliedAttempts = 0;
+let initialSetupPromptShown = false;
+// Estimated network hashes/sec, derived from the node's reported
+// difficulty (difficulty * 2^32 / 600s — the same approximation the
+// Learn tab explains). Used only for the "your share" fun-stat.
+let networkHashrate = null;
+
+// ---------------------------------------------------------------------
+// copy — fills in every static label/button/heading/message from
+// copy.js, and builds the Learn tab's sections from COPY.learn.sections.
+// ---------------------------------------------------------------------
+
+function applyCopy() {
+  document.title = COPY.meta.pageTitle;
+  el('marquee-text').textContent = COPY.marquee;
+  el('banner-title').textContent = COPY.banner.title;
+  el('banner-tagline').textContent = COPY.banner.tagline;
+  dom.statusText.textContent = COPY.status.checking;
+
+  el('tab-btn-mine').textContent = COPY.tabs.mine;
+  el('tab-btn-settings').textContent = COPY.tabs.settings;
+  el('tab-btn-learn').textContent = COPY.tabs.learn;
+
+  dom.hashesSubmitted.textContent = COPY.mine.hashesSubmitted(0);
+  dom.mineButton.textContent = COPY.mine.mineButton;
+  el('autoclick-label').textContent = COPY.mine.autoclickLabel;
+  el('target-bar-label').textContent = COPY.mine.targetBarLabel;
+  dom.targetBarCaption.textContent = COPY.mine.targetBarCaption(0, 0);
+  el('last-hash-label').textContent = COPY.mine.lastHashLabel;
+  dom.lastHash.textContent = COPY.mine.lastHashPlaceholder;
+  el('success-title').textContent = COPY.mine.successTitle;
+  el('header-window-title-prefix').textContent = COPY.mine.headerWindowTitlePrefix;
+
+  const fieldIds = { version: 'version', prevhash: 'prevHash', merkleroot: 'merkleRoot', time: 'time', bits: 'bits', nonce: 'nonce', coinbase: 'coinbase' };
+  for (const [domSuffix, copyKey] of Object.entries(fieldIds)) {
+    el(`label-${domSuffix}`).textContent = COPY.mine.fields[copyKey].label;
+    el(`help-${domSuffix}`).textContent = COPY.mine.fields[copyKey].help;
+  }
+
+  el('header-hex-label').textContent = COPY.mine.headerHexLabel;
+  dom.fieldHeaderHex.textContent = COPY.mine.headerHexPlaceholder;
+  dom.refreshButton.textContent = COPY.mine.refreshButton;
+  el('log-window-title').textContent = COPY.mine.logWindowTitle;
+  el('hashrate-window-title').textContent = COPY.mine.hashrateWindowTitle;
+  dom.hashrateShareCaption.textContent = COPY.mine.hashrateSharePlaceholder;
+
+  el('settings-window-title').textContent = COPY.settings.windowTitle;
+  el('settings-intro').innerHTML = COPY.settings.intro;
+  el('rpc-legend').textContent = COPY.settings.rpcLegend;
+  el('host-label').textContent = COPY.settings.hostLabel;
+  dom.inputHost.placeholder = COPY.settings.hostPlaceholder;
+  el('port-label').textContent = COPY.settings.portLabel;
+  dom.inputPort.placeholder = COPY.settings.portPlaceholder;
+  el('username-label').textContent = COPY.settings.usernameLabel;
+  el('password-label').textContent = COPY.settings.passwordLabel;
+  dom.inputPassword.placeholder = COPY.settings.passwordPlaceholder;
+  el('cookie-path-label').textContent = COPY.settings.cookiePathLabel;
+  dom.inputCookiePath.placeholder = COPY.settings.cookiePathPlaceholder;
+  el('payout-legend').textContent = COPY.settings.payoutLegend;
+  el('payout-label').textContent = COPY.settings.payoutLabel;
+  dom.inputPayoutAddress.placeholder = COPY.settings.payoutPlaceholder;
+  el('payout-help').textContent = COPY.settings.payoutHelp;
+  el('save-settings-button').textContent = COPY.settings.saveButton;
+
+  el('learn-window-title').textContent = COPY.learn.windowTitle;
+  const learnBody = el('learn-body');
+  learnBody.innerHTML = '';
+  for (const section of COPY.learn.sections) {
+    const heading = document.createElement('h3');
+    heading.textContent = section.heading;
+    learnBody.appendChild(heading);
+    const body = document.createElement('div');
+    body.innerHTML = section.html;
+    while (body.firstChild) {
+      learnBody.appendChild(body.firstChild);
+    }
+  }
+
+  el('footer-github-link').textContent = COPY.footer.githubLinkText;
+  el('footer-donation-text').textContent = COPY.footer.donationText;
+}
+
+// ---------------------------------------------------------------------
+// tabs
+// ---------------------------------------------------------------------
+
+const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
+const tabPanels = Array.from(document.querySelectorAll('.tab-panel'));
+
+function showTab(name) {
+  for (const btn of tabButtons) {
+    btn.classList.toggle('active', btn.dataset.tab === name);
+  }
+  for (const panel of tabPanels) {
+    panel.classList.toggle('hidden', panel.dataset.tabPanel !== name);
+  }
+  try {
+    localStorage.setItem('click-miner-tab', name);
+  } catch {
+    // localStorage unavailable (private browsing, etc.) — not persisting the tab is fine.
+  }
+}
+
+for (const btn of tabButtons) {
+  btn.addEventListener('click', () => showTab(btn.dataset.tab));
+}
 
 // ---------------------------------------------------------------------
 // helpers
@@ -85,8 +196,30 @@ function hexLeadingZeroBits(hex) {
   return bits;
 }
 
-function formatCounter(n) {
-  return String(n).padStart(7, '0');
+// Writes out a tiny percentage in full decimal form instead of scientific
+// notation — e.g. "0.0000000000000000001%" rather than "1e-19%" — since
+// seeing every single zero spelled out is the actual joke.
+function formatFullPercent(percent) {
+  if (!isFinite(percent) || percent <= 0) return '0%';
+  if (percent >= 1) return percent.toFixed(2) + '%';
+  const exponent = Math.floor(Math.log10(percent));
+  const decimalPlaces = Math.min(100, -exponent + 4);
+  const trimmed = percent.toFixed(decimalPlaces).replace(/0+$/, '').replace(/\.$/, '');
+  return trimmed + '%';
+}
+
+// Network hashrate ≈ difficulty × 2^32 / 600s (see the Learn tab's "actual
+// math" section for the derivation). Our "share" is just our lifetime
+// hash count divided by one second's worth of that — a deliberately silly
+// comparison (a count against a rate) that produces the joke: an
+// absurdly, comically tiny percentage.
+function updateHashrateShare() {
+  if (!networkHashrate || networkHashrate <= 0) {
+    dom.hashrateShareCaption.textContent = COPY.mine.hashrateSharePlaceholder;
+    return;
+  }
+  const percent = (lastAppliedAttempts / networkHashrate) * 100;
+  dom.hashrateShareCaption.textContent = COPY.mine.hashrateShareCaption(formatFullPercent(percent));
 }
 
 function logLine(text, isHit) {
@@ -114,7 +247,7 @@ async function loadSettings() {
   dom.inputPort.value = settings.port || '';
   dom.inputUsername.value = settings.username || '';
   dom.inputPassword.value = '';
-  dom.inputPassword.placeholder = settings.hasPassword ? '(unchanged)' : '';
+  dom.inputPassword.placeholder = settings.hasPassword ? COPY.settings.passwordUnchangedPlaceholder : COPY.settings.passwordPlaceholder;
   dom.inputCookiePath.value = settings.cookiePath || '';
   dom.inputPayoutAddress.value = settings.payoutAddress || '';
   return settings;
@@ -122,7 +255,7 @@ async function loadSettings() {
 
 dom.settingsForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  setMessage(dom.settingsMessage, 'saving…');
+  setMessage(dom.settingsMessage, COPY.settings.saving);
 
   const body = {
     host: dom.inputHost.value.trim(),
@@ -137,18 +270,13 @@ dom.settingsForm.addEventListener('submit', async (event) => {
 
   try {
     await api('POST', '/api/settings', body);
-    setMessage(dom.settingsMessage, '✓ saved', 'ok');
+    setMessage(dom.settingsMessage, COPY.settings.saved, 'ok');
     dom.inputPassword.value = '';
     await refreshStatus();
     await loadCandidate();
   } catch (err) {
-    setMessage(dom.settingsMessage, '✗ ' + err.message, 'error');
+    setMessage(dom.settingsMessage, COPY.settings.saveError(err.message), 'error');
   }
-});
-
-dom.settingsToggle.addEventListener('click', () => {
-  const hidden = dom.settingsBody.classList.toggle('hidden');
-  dom.settingsToggle.textContent = hidden ? '▢' : '▁';
 });
 
 // ---------------------------------------------------------------------
@@ -158,27 +286,34 @@ dom.settingsToggle.addEventListener('click', () => {
 function applyStatus(status) {
   if (status.node) {
     dom.statusLed.className = 'led ok';
-    dom.statusText.textContent = `connected · ${status.node.chain} · block ${status.node.blocks}`;
+    dom.statusText.textContent = COPY.status.connected(status.node.chain);
+    if (status.node.difficulty) {
+      networkHashrate = (status.node.difficulty * 2 ** 32) / 600;
+      updateHashrateShare();
+    }
   } else {
     dom.statusLed.className = 'led error';
-    dom.statusText.textContent = `node unreachable: ${status.nodeError || 'unknown error'}`;
+    dom.statusText.textContent = COPY.status.nodeUnreachable(status.nodeError);
   }
-  if (!status.payoutConfigured) {
-    dom.settingsBody.classList.remove('hidden');
-    dom.settingsToggle.textContent = '▁';
+  // Nudge a first-time visitor to Settings once, without repeatedly
+  // yanking them back there on every later status broadcast if they've
+  // deliberately navigated elsewhere while still mid-setup.
+  if (!status.payoutConfigured && !initialSetupPromptShown) {
+    initialSetupPromptShown = true;
+    showTab('settings');
   }
 }
 
 async function refreshStatus() {
   dom.statusLed.className = 'led pending';
-  dom.statusText.textContent = 'checking connection…';
+  dom.statusText.textContent = COPY.status.checking;
   try {
     const status = await api('GET', '/api/status');
     applyStatus(status);
     return status;
   } catch (err) {
     dom.statusLed.className = 'led error';
-    dom.statusText.textContent = 'status check failed: ' + err.message;
+    dom.statusText.textContent = COPY.status.checkFailed(err.message);
     return null;
   }
 }
@@ -195,18 +330,20 @@ function renderCandidate() {
   dom.fieldMerkleroot.textContent = candidate.merkleRoot;
   dom.fieldTime.textContent = `${candidate.time} (${new Date(candidate.time * 1000).toISOString()})`;
   dom.fieldBits.textContent = candidate.bits;
-  dom.fieldNonce.textContent = candidate.nonce;
+  dom.fieldNonce.value = candidate.nonce;
   dom.fieldCoinbaseValue.textContent = `${(candidate.coinbase.valueSats / 1e8).toFixed(8)} BTC → ${candidate.payoutAddress} (${candidate.payoutType})`;
   dom.fieldHeaderHex.textContent = candidate.headerHex;
-  dom.hitCounter.textContent = formatCounter(candidate.attempts);
+  dom.hashesSubmitted.textContent = COPY.mine.hashesSubmitted(candidate.attempts);
+  updateHashrateShare();
 
   targetLeadingZeroBits = hexLeadingZeroBits(candidate.target);
 }
 
-// A fresh candidate (new template, new coinbase) resets the attempt
-// counter server-side too, so the hash-result dedupe guard needs to reset
-// with it — otherwise a lower attempts count from the new candidate would
-// look like a stale, already-applied result and get silently dropped.
+// `attempts` is the server's persistent lifetime hash count (see
+// server/stats.js) — it doesn't reset when the candidate/template
+// refreshes, so syncing lastAppliedAttempts here just keeps the dedupe
+// guard (see applyHashResult) caught up with whatever the server already
+// knows, rather than resetting it.
 function applyCandidate(payload) {
   candidate = payload;
   lastAppliedAttempts = payload.attempts;
@@ -224,10 +361,10 @@ async function loadCandidate() {
 }
 
 dom.refreshButton.addEventListener('click', async () => {
-  setMessage(dom.candidateMessage, 'fetching fresh template…');
+  setMessage(dom.candidateMessage, COPY.mine.refreshFetching);
   try {
     applyCandidate(await api('POST', '/api/candidate/refresh'));
-    setMessage(dom.candidateMessage, '✓ refreshed', 'ok');
+    setMessage(dom.candidateMessage, COPY.mine.refreshDone, 'ok');
   } catch (err) {
     setMessage(dom.candidateMessage, err.message, 'error');
   }
@@ -251,9 +388,10 @@ function applyHashResult(result) {
     candidate.attempts = result.attempts;
     candidate.headerHex = result.headerHex;
   }
-  dom.fieldNonce.textContent = result.nonce;
+  dom.fieldNonce.value = result.nonce;
   dom.fieldHeaderHex.textContent = result.headerHex;
-  dom.hitCounter.textContent = formatCounter(result.attempts);
+  dom.hashesSubmitted.textContent = COPY.mine.hashesSubmitted(result.attempts);
+  updateHashrateShare();
 
   dom.lastHash.textContent = result.hash;
 
@@ -261,18 +399,18 @@ function applyHashResult(result) {
     ? Math.min(100, (result.leadingZeroBits / targetLeadingZeroBits) * 100)
     : 0;
   dom.targetBarFill.style.width = pct + '%';
-  dom.targetBarCaption.textContent = `${result.leadingZeroBits} / ${targetLeadingZeroBits} bits`;
+  dom.targetBarCaption.textContent = COPY.mine.targetBarCaption(result.leadingZeroBits, targetLeadingZeroBits);
 
-  logLine(`#${result.attempts} nonce=${result.nonce} → ${result.hash.slice(0, 24)}… (${result.leadingZeroBits} zero bits)`, result.meetsTarget);
+  logLine(COPY.mine.logLine(result.attempts, result.nonce, result.hash.slice(0, 24), result.leadingZeroBits), result.meetsTarget);
 
   if (result.meetsTarget) {
     stopAutoclick();
     dom.successBanner.classList.remove('hidden');
     const submit = result.submit;
     dom.successDetail.textContent = submit
-      ? (submit.accepted ? `submitblock accepted! hash: ${result.hash}` : `submitblock rejected: ${submit.detail}`)
-      : '(no submit attempted)';
-    logLine(submit && submit.accepted ? '*** BLOCK ACCEPTED BY YOUR NODE ***' : '*** target met, but submission failed — see banner above ***', true);
+      ? (submit.accepted ? COPY.mine.successAccepted(result.hash) : COPY.mine.successRejected(submit.detail))
+      : COPY.mine.successNoSubmit;
+    logLine(submit && submit.accepted ? COPY.mine.logHitAccepted : COPY.mine.logHitRejected, true);
   }
 }
 
@@ -285,11 +423,27 @@ async function mineOnce() {
   dom.mineButton.classList.add('pressed');
   setTimeout(() => dom.mineButton.classList.remove('pressed'), 120);
 
+  // If the user has typed a different value into the nonce field, use it
+  // for this click instead of letting the server auto-increment. Once
+  // applied, the field reflects the server's actual nonce again, so the
+  // next click — without further edits — falls straight back to auto-
+  // increment with no extra state to track.
+  const body = {};
+  const manualNonce = Number(dom.fieldNonce.value);
+  if (
+    Number.isInteger(manualNonce) &&
+    manualNonce >= 0 &&
+    manualNonce <= 0xffffffff &&
+    manualNonce !== candidate.nonce
+  ) {
+    body.nonce = manualNonce;
+  }
+
   try {
-    applyHashResult(await api('POST', '/api/hash', {}));
+    applyHashResult(await api('POST', '/api/hash', body));
   } catch (err) {
     if (err.statusCode !== 429) {
-      logLine('error: ' + err.message, false);
+      logLine(COPY.mine.logError(err.message), false);
     }
   }
 }
@@ -299,6 +453,8 @@ dom.mineButton.addEventListener('click', mineOnce);
 function startAutoclick() {
   if (autoclickTimer) return;
   autoclickTimer = setInterval(mineOnce, AUTOCLICK_INTERVAL_MS);
+  dom.autoclickCheckbox.checked = true;
+  dom.fieldNonce.disabled = true;
 }
 
 function stopAutoclick() {
@@ -306,6 +462,7 @@ function stopAutoclick() {
   clearInterval(autoclickTimer);
   autoclickTimer = null;
   dom.autoclickCheckbox.checked = false;
+  dom.fieldNonce.disabled = false;
 }
 
 dom.autoclickCheckbox.addEventListener('change', () => {
@@ -323,9 +480,12 @@ dom.autoclickCheckbox.addEventListener('change', () => {
 // slow backstop poll below covers the case where it never connects at all.
 // ---------------------------------------------------------------------
 
+let currentWs = null;
+
 function connectWebSocket() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+  currentWs = ws;
 
   ws.addEventListener('message', (event) => {
     let message;
@@ -353,11 +513,36 @@ function connectWebSocket() {
   ws.addEventListener('error', () => ws.close());
 }
 
+// A backgrounded tab or a laptop going to sleep can leave the WebSocket
+// dead without ever firing 'close' (so the reconnect logic above never
+// triggers), and browsers throttle setInterval in background tabs — so
+// status can go stale and silently stay that way. The moment the tab is
+// actually looked at again, force a fresh REST sync and make sure the
+// socket is really still open, reconnecting if not.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  refreshStatus();
+  if (candidate) loadCandidate();
+  if (!currentWs || currentWs.readyState !== WebSocket.OPEN) {
+    connectWebSocket();
+  }
+});
+
 // ---------------------------------------------------------------------
 // boot
 // ---------------------------------------------------------------------
 
 async function init() {
+  applyCopy();
+
+  let initialTab = 'mine';
+  try {
+    initialTab = localStorage.getItem('click-miner-tab') || 'mine';
+  } catch {
+    // localStorage unavailable — default to the mine tab.
+  }
+  showTab(initialTab);
+
   await loadSettings();
   const status = await refreshStatus();
   if (status && status.payoutConfigured) {

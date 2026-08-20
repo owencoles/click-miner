@@ -1,9 +1,24 @@
-# Start9 s9pk packaging manifest (placeholder — fill in as the app is packaged).
+# Start9 / StartOS service manifest.
+#
+# CONFIDENCE NOTE: the top-level fields below (id, title, version, license,
+# main/docker config, health-checks, interfaces) are verified against a
+# real shipped StartOS package (Start9Labs/bitcoin-core-startos) as of
+# 2026-08. The `dependencies` block is NOT verified to the same standard —
+# StartOS's mechanism for a dependent service to obtain a bitcoind RPC
+# host/port/credentials at runtime (config rules, auto-configure, rpcauth
+# registration via actions) is materially more involved than Umbrel's
+# static env-var injection, several real example repos I tried to check
+# for a working reference (bwt-wrapper, thunderhub-startos) returned 404
+# during research, and StartOS's own dependency-spec docs page stops short
+# of documenting the runtime access API. Treat the `dependencies` section
+# below as a placeholder shape, not a working implementation — verify
+# against the current start-sdk docs and a real dependent-service example
+# before actually packaging this for StartOS.
 
 id: click-miner
 title: Click Miner
 version: 0.1.0
-release-notes: Initial scaffold.
+release-notes: Initial release.
 license: MIT
 wrapper-repo: ""
 upstream-repo: ""
@@ -12,8 +27,11 @@ marketing-site: ""
 description:
   short: A free, open-source, educational manual Bitcoin miner.
   long: >
-    Assemble a real block header from your own node's data, click to hash,
-    and see exactly what mining does — one hash at a time.
+    Click a button and the app assembles one real block header from your
+    own node's live data, computes a single SHA256d hash against the
+    current network target, and shows you exactly what mining does — one
+    hash at a time. Reward payout on the (nearly impossible) chance you
+    find a block goes to your own configured address.
 assets:
   license: LICENSE
   icon: ""
@@ -24,10 +42,38 @@ main:
   entrypoint: "node"
   args:
     - "server/index.js"
-  mounts: {}
+  mounts:
+    main: /data
+  env:
+    PORT: "3000"
+    DATA_DIR: /data
+health-checks: {}
+interfaces:
+  main:
+    name: Click Miner Web UI
+    description: The Click Miner web interface.
+    tor-config:
+      port-mapping:
+        80: "3000"
+    lan-config:
+      443:
+        ssl: true
+        internal: 3000
+    ui: true
+    protocols:
+      - tcp
+      - http
 hardware-requirements:
   arch:
     - x86_64
     - aarch64
-# TODO: declare dependency/interface on the Start9 Bitcoin service.
-dependencies: {}
+# TODO (unverified — see note at top of file): declare the dependency on
+# StartOS's bitcoind package and how RPC_HOST/RPC_PORT/RPC_USER/
+# RPC_PASSWORD (server/settings.js's expected env vars) actually get
+# populated from it at runtime.
+dependencies:
+  bitcoind:
+    version: ">=24.0.0 <31.0.0"
+    requirement:
+      type: required
+    description: Click Miner needs your own Bitcoin node's RPC interface to fetch block templates and submit blocks.

@@ -1,0 +1,33 @@
+# Start9 s9pk packaging manifest (placeholder — fill in as the app is packaged).
+
+id: click-miner
+title: Click Miner
+version: 0.1.0
+release-notes: Initial scaffold.
+license: MIT
+wrapper-repo: ""
+upstream-repo: ""
+support-site: ""
+marketing-site: ""
+description:
+  short: A free, open-source, educational manual Bitcoin miner.
+  long: >
+    Assemble a real block header from your own node's data, click to hash,
+    and see exactly what mining does — one hash at a time.
+assets:
+  license: LICENSE
+  icon: ""
+  instructions: ""
+main:
+  type: docker
+  image: main
+  entrypoint: "node"
+  args:
+    - "server/index.js"
+  mounts: {}
+hardware-requirements:
+  arch:
+    - x86_64
+    - aarch64
+# TODO: declare dependency/interface on the Start9 Bitcoin service.
+dependencies: {}

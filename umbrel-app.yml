@@ -1,0 +1,23 @@
+# Umbrel app manifest (placeholder — fill in as the app is packaged).
+
+manifestVersion: 1
+id: click-miner
+category: bitcoin
+name: Click Miner
+version: "0.1.0"
+tagline: Be your own miner (lol).
+description: >
+  A free, open-source, educational manual Bitcoin miner. Assemble a real
+  block header from your own node's data, click to hash, and see exactly
+  what mining does — one hash at a time.
+developer: Click Miner Contributors
+website: ""
+repo: ""
+support: ""
+port: 3000
+gallery: []
+releaseNotes: "Initial scaffold."
+dependencies:
+  - bitcoin
+path: ""
+defaultPassword: ""

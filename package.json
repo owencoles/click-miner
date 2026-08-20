@@ -1,0 +1,20 @@
+{
+  "name": "click-miner",
+  "version": "0.1.0",
+  "description": "A free, open-source, educational manual Bitcoin miner.",
+  "license": "MIT",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bech32": "^2.0.0",
+    "bs58check": "^4.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {}
+}

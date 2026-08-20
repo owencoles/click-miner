@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Click Miner :: Be Your Own Miner (lol)</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="marquee-bar">
+    <div class="marquee-track" id="marquee-track">
+      <span>⛏ WELCOME TO CLICK MINER ⛏ manually mine real bitcoin, one hash at a time ⛏ you will (basically) never find a block, and that is the entire point ⛏ be your own miner (lol) ⛏ 100% free &amp; open source ⛏ no pool, no telemetry, just you vs. 2^256 ⛏</span>
+    </div>
+  </div>
+
+  <header class="banner">
+    <div class="banner-inner">
+      <h1 class="title">CLICK MINER<sup class="blink live-dot" id="live-indicator">● LIVE</sup></h1>
+      <p class="tagline">be your own miner (lol)</p>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <section class="window" id="status-window">
+      <div class="window-titlebar"><span>NODE_STATUS.SYS</span></div>
+      <div class="window-body status-body">
+        <div class="status-row">
+          <span class="led" id="status-led"></span>
+          <span id="status-text">checking connection…</span>
+        </div>
+        <div class="counter-wrap">
+          <div class="counter-label">TOTAL HASH ATTEMPTS</div>
+          <div class="counter" id="hit-counter">0000000</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="window" id="settings-window">
+      <div class="window-titlebar">
+        <span>SETTINGS.EXE — your node &amp; payout address</span>
+        <button type="button" class="titlebar-btn" id="settings-toggle">▁</button>
+      </div>
+      <div class="window-body" id="settings-body">
+        <p class="help-text">
+          Click Miner connects to <strong>your own</strong> Bitcoin full node — never a
+          third-party pool. On the (nearly impossible) chance you find a block, the
+          reward pays out to the address below. This app never sees or stores a
+          private key.
+        </p>
+        <form id="settings-form">
+          <fieldset>
+            <legend>bitcoind RPC</legend>
+            <label>Host <input type="text" name="host" id="input-host" placeholder="127.0.0.1" /></label>
+            <label>Port <input type="number" name="port" id="input-port" placeholder="8332" /></label>
+            <label>RPC Username <input type="text" name="username" id="input-username" autocomplete="off" /></label>
+            <label>RPC Password <input type="password" name="password" id="input-password" autocomplete="off" placeholder="(leave blank to keep current)" /></label>
+            <label>Cookie file path <input type="text" name="cookiePath" id="input-cookie-path" placeholder="/home/user/.bitcoin/.cookie" /></label>
+          </fieldset>
+          <fieldset>
+            <legend>Payout address</legend>
+            <label>Your Bitcoin address
+              <input type="text" name="payoutAddress" id="input-payout-address" placeholder="bc1q… / 1… / 3… / bc1p…" autocomplete="off" />
+            </label>
+            <p class="help-text small">Legacy, SegWit, and Taproot addresses are all supported.</p>
+          </fieldset>
+          <div class="button-row">
+            <button type="submit" class="btn">SAVE SETTINGS</button>
+            <span id="settings-message" class="inline-message"></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="window" id="header-window">
+      <div class="window-titlebar"><span>BLOCK_HEADER.DAT — candidate #<span id="field-height">--</span></span></div>
+      <div class="window-body">
+        <table class="field-table">
+          <tbody>
+            <tr>
+              <th>Version</th>
+              <td class="hex" id="field-version">--</td>
+              <td class="field-help">Which consensus rules this block signals support for.</td>
+            </tr>
+            <tr>
+              <th>Prev Block Hash</th>
+              <td class="hex" id="field-prevhash">--</td>
+              <td class="field-help">The hash of the block this one builds on — this is what chains blocks together.</td>
+            </tr>
+            <tr>
+              <th>Merkle Root</th>
+              <td class="hex" id="field-merkleroot">--</td>
+              <td class="field-help">A single hash committing to every transaction in this block, coinbase included.</td>
+            </tr>
+            <tr>
+              <th>Time</th>
+              <td class="hex" id="field-time">--</td>
+              <td class="field-help">Unix timestamp claimed for this block.</td>
+            </tr>
+            <tr>
+              <th>Bits (target)</th>
+              <td class="hex" id="field-bits">--</td>
+              <td class="field-help">Compact encoding of the target your hash must fall under to win.</td>
+            </tr>
+            <tr>
+              <th>Nonce</th>
+              <td class="hex" id="field-nonce">--</td>
+              <td class="field-help">The only field you're really turning the crank on. 4 bytes = ~4.3 billion values.</td>
+            </tr>
+            <tr>
+              <th>Coinbase pays</th>
+              <td class="hex" id="field-coinbase-value">--</td>
+              <td class="field-help">Block subsidy + fees, sent to your configured payout address.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="header-hex-wrap">
+          <div class="field-label">Full 80-byte header (hex)</div>
+          <div class="hex header-hex" id="field-header-hex">--</div>
+        </div>
+
+        <div class="button-row">
+          <button type="button" class="btn" id="refresh-button">↻ REFRESH TEMPLATE</button>
+          <span id="candidate-message" class="inline-message"></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="window" id="mine-window">
+      <div class="window-titlebar"><span>MINE.EXE</span></div>
+      <div class="window-body mine-body">
+
+        <div class="target-bar-wrap">
+          <div class="field-label">Leading zero bits vs. target (closer = luckier)</div>
+          <div class="target-bar">
+            <div class="target-bar-fill" id="target-bar-fill" style="width: 0%"></div>
+          </div>
+          <div class="target-bar-caption" id="target-bar-caption">0 / 0 bits</div>
+        </div>
+
+        <div class="last-hash-wrap">
+          <div class="field-label">Last hash</div>
+          <div class="hex last-hash" id="last-hash">--</div>
+        </div>
+
+        <div class="mine-controls">
+          <button type="button" class="btn btn-huge" id="mine-button">⛏ MINE! ⛏</button>
+          <label class="autoclick-toggle">
+            <input type="checkbox" id="autoclick-checkbox" />
+            auto-click (slow, for fun — capped, never competitive)
+          </label>
+        </div>
+
+        <div id="success-banner" class="success-banner hidden">
+          <div class="success-banner-inner">
+            <div class="success-title">🎉 YOU FOUND A BLOCK?! 🎉</div>
+            <div id="success-detail"></div>
+          </div>
+        </div>
+
+        <div class="log-wrap">
+          <div class="field-label">Recent attempts</div>
+          <div class="log-screen" id="log-screen"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="window" id="about-window">
+      <div class="window-titlebar"><span>README.TXT</span></div>
+      <div class="window-body">
+        <p>
+          Real Bitcoin mining hardware performs on the order of hundreds of
+          <em>terahashes</em> per second. You, clicking a button, perform roughly
+          one hash every couple of seconds. The odds of you finding a block are
+          not "small" — they're generation-ship-to-Andromeda small. That's the
+          joke, and also the lesson: this is exactly what a miner does, just at
+          a scale you can actually watch happen.
+        </p>
+        <div class="construction-banner">
+          <div class="construction-stripes"></div>
+          <span class="construction-text">🚧 UNDER CONSTRUCTION 🚧</span>
+          <div class="construction-stripes"></div>
+        </div>
+        <p class="small">Click Miner is MIT-licensed, free, and open source. No telemetry, no analytics, no calls to anything but your own node.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="page-footer">
+    <p>Click Miner — 100% free &amp; open source · MIT license</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

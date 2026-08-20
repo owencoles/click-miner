@@ -1,0 +1,16 @@
+# Umbrel packaging. Declares the app service and (later) its dependency on
+# the Umbrel Bitcoin Node app for RPC host/port/user/pass env injection.
+
+version: "3.7"
+
+services:
+  app:
+    build: .
+    image: click-miner:latest
+    restart: on-failure
+    ports:
+      - "3000:3000"
+    environment:
+      # TODO: RPC connection env vars, injected by Umbrel when the app
+      # declares a dependency on the Bitcoin Node app.
+      - PORT=3000

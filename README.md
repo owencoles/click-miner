@@ -4,7 +4,7 @@
 
 # Click Miner
 
-**The world's least efficient Bitcoin miner.**
+**The world's least efficient bitcoin miner.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](package.json)
@@ -20,8 +20,6 @@ checks it against the current network target.
 It's not a real mining tool in any competitive sense — it will essentially
 never find a block. It's a toy / educational visualization of exactly what a
 miner does, one hash at a time. Be your own miner (lol).
-
-See [CLICK-MINER-SPEC.md](CLICK-MINER-SPEC.md) for the full project spec.
 
 ## Features
 

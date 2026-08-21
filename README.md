@@ -21,6 +21,22 @@ It's not a real mining tool in any competitive sense — it will essentially
 never find a block. It's a fun educational visualization of exactly what a
 miner does, one hash at a time.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/screenshots/mine.png" width="49%" alt="Click Miner's Mine tab, connected to a node and showing a live block header candidate" />
+  <img src="docs/screenshots/mine-found-block.png" width="49%" alt="Click Miner's Mine tab after submitblock accepts a candidate — the 'YOU FOUND A BLOCK?!' state" />
+</p>
+<p align="center">
+  <img src="docs/screenshots/settings.png" width="49%" alt="Click Miner's Settings tab for RPC connection and payout address" />
+  <img src="docs/screenshots/learn.png" width="49%" alt="Click Miner's Learn tab explaining block headers, targets, and difficulty" />
+</p>
+
+<sub>These are captured against a local regtest node, not a live mainnet
+wallet — real block data and a real `submitblock` round trip, but with
+regtest's trivially low difficulty so a screenshot could actually show the
+success state.</sub>
+
 ## Features
 
 - **Real block data, one real hash per click.** Every field (version, prev

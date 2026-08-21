@@ -15,7 +15,7 @@
 
 export const COPY = {
   meta: {
-    pageTitle: "Click Miner :: The World's Least Efficient Bitcoin Miner",
+    pageTitle: "Click Miner",
   },
 
   marquee:
@@ -54,7 +54,7 @@ export const COPY = {
     hashrateSharePlaceholder: '--',
     hashrateShareCaption: (percentText) => percentText,
 
-    successTitle: '🎉 YOU FOUND A BLOCK?! 🎉',
+    successTitle: 'YOU FOUND A BLOCK?!',
     successAccepted: (hash) => `submitblock accepted! hash: ${hash}`,
     successRejected: (detail) => `submitblock rejected: ${detail}`,
     successNoSubmit: '(no submit attempted)',

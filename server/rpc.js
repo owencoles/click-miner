@@ -11,6 +11,7 @@ import https from 'node:https';
 import fs from 'node:fs';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 import { getSettings } from './settings.js';
+import { isPrivateHost, isValidHostname } from './net-guard.js';
 
 let idCounter = 0;
 
@@ -23,17 +24,55 @@ function isOnionHost(host) {
   return typeof host === 'string' && host.toLowerCase().endsWith('.onion');
 }
 
+// cookiePath is env-only (see server/settings.js) — it can't be set by a
+// request. The read is still wrapped so the failure reason never reaches
+// the client: the raw fs error names the path and distinguishes ENOENT
+// from EISDIR from EACCES, which is a filesystem oracle if it's echoed.
 function resolveAuth(settings) {
   if (settings.cookiePath) {
-    const cookie = fs.readFileSync(settings.cookiePath, 'utf8').trim();
-    const [user, password] = cookie.split(':');
-    return { user, password };
+    let cookie;
+    try {
+      cookie = fs.readFileSync(settings.cookiePath, 'utf8').trim();
+    } catch (err) {
+      console.error(`cookie file unreadable (${settings.cookiePath}):`, err.message);
+      throw Object.assign(
+        new Error('RPC cookie file could not be read — check RPC_COOKIE_PATH and its permissions'),
+        { statusCode: 502 }
+      );
+    }
+    const separator = cookie.indexOf(':');
+    if (separator === -1) {
+      throw Object.assign(
+        new Error('RPC cookie file is malformed (expected "user:password")'),
+        { statusCode: 502 }
+      );
+    }
+    return { user: cookie.slice(0, separator), password: cookie.slice(separator + 1) };
   }
   return { user: settings.username, password: settings.password };
 }
 
+// Defence in depth behind settings.js's own validation: env vars bypass
+// saveSettings entirely, and this is the last point before we actually
+// open a socket to whatever `host` says.
+function assertConnectionAllowed(settings) {
+  if (!isValidHostname(settings.host)) {
+    throw Object.assign(new Error('RPC host is not a valid hostname or IP address'), { statusCode: 400 });
+  }
+  if (process.env.ALLOW_PUBLIC_RPC_HOST !== '1' && !isPrivateHost(settings.host)) {
+    throw Object.assign(
+      new Error('RPC host is not on your machine, LAN, tailnet, or Tor — refusing to connect'),
+      { statusCode: 400 }
+    );
+  }
+  if (!Number.isInteger(settings.port) || settings.port < 1 || settings.port > 65535) {
+    throw Object.assign(new Error('RPC port must be a whole number between 1 and 65535'), { statusCode: 400 });
+  }
+}
+
 export function rpcCall(method, params = []) {
   const settings = getSettings();
+  assertConnectionAllowed(settings);
   const { user, password } = resolveAuth(settings);
 
   const body = JSON.stringify({
@@ -78,8 +117,15 @@ export function rpcCall(method, params = []) {
         let parsed;
         try {
           parsed = JSON.parse(data);
-        } catch (err) {
-          reject(Object.assign(new Error(`Invalid RPC response (status ${res.statusCode}): ${data.slice(0, 200)}`), { statusCode: 502 }));
+        } catch {
+          // The body is whatever host:port actually returned. Logging it
+          // locally is useful; returning it would turn a misconfigured
+          // host into a port scanner that reports back what it found.
+          console.error(`non-JSON RPC response (status ${res.statusCode}):`, data.slice(0, 200));
+          reject(Object.assign(
+            new Error(`RPC host returned a non-JSON response (HTTP ${res.statusCode}) — check the host, port, and credentials`),
+            { statusCode: 502 }
+          ));
           return;
         }
         if (parsed.error) {

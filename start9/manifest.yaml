@@ -39,14 +39,20 @@ assets:
 main:
   type: docker
   image: main
-  entrypoint: "node"
-  args:
-    - "server/index.js"
+  # Must go through docker-entrypoint.sh, not straight to node: the
+  # entrypoint starts the bundled Tor client, without which a .onion RPC
+  # host can't be resolved at all.
+  entrypoint: "docker-entrypoint.sh"
+  args: []
   mounts:
     main: /data
   env:
     PORT: "3000"
     DATA_DIR: /data
+    # All interfaces within the container — StartOS reaches it over its
+    # own network, and its interface layer is what actually exposes the
+    # UI. A loopback bind here would make the container unreachable.
+    HOST: "0.0.0.0"
 health-checks: {}
 interfaces:
   main:

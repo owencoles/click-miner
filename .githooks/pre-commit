@@ -1,0 +1,76 @@
+#!/bin/sh
+# Secret guard. Click Miner writes your node's RPC password to
+# data/config.json at runtime, and .gitignore already keeps that directory
+# out of commits — but `git add -f`, a rewritten .gitignore, or a stray
+# copy of the file somewhere else would all slip past it. This is the
+# backstop for that.
+#
+# Enable once per clone:
+#   git config core.hooksPath .githooks
+#
+# Bypass for a specific commit (only if you're certain):
+#   git commit --no-verify
+
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+fail=0
+
+note() {
+  [ "$fail" -eq 0 ] && echo "" && echo "pre-commit: refusing to commit — possible secret detected" && echo ""
+  fail=1
+  echo "  $1"
+}
+
+for file in $staged; do
+  case "$file" in
+    data/*|*/data/config.json|*.cookie|.env|.env.*)
+      note "$file — runtime config or credential file, should never be committed"
+      continue
+      ;;
+    .githooks/pre-commit)
+      # This script's own source, which necessarily contains the literal
+      # patterns below (e.g. the PEM header text) — scanning it against
+      # itself is a guaranteed false positive, not a leak.
+      continue
+      ;;
+  esac
+
+  # Skip binaries and anything already gone from the worktree.
+  [ -f "$file" ] || continue
+  git diff --cached --numstat -- "$file" | grep -q '^-' && continue
+
+  content=$(git show ":$file" 2>/dev/null || true)
+  [ -z "$content" ] && continue
+
+  # A populated password/rpcpassword field. Empty values and placeholders
+  # are fine — it's a real-looking value that matters.
+  if printf '%s' "$content" | grep -qiE '"(rpcpassword|password)"[[:space:]]*:[[:space:]]*"[^"]{8,}"'; then
+    note "$file — contains a populated password field"
+  fi
+
+  # A v3 onion address: the unlisted way to reach someone's node.
+  if printf '%s' "$content" | grep -qE '\b[a-z2-7]{56}\.onion\b'; then
+    note "$file — contains a .onion address"
+  fi
+
+  # Extended private keys and PEM private keys.
+  if printf '%s' "$content" | grep -qE '\b(xprv|yprv|zprv|tprv)[a-zA-HJ-NP-Z0-9]{50,}\b'; then
+    note "$file — contains an extended private key"
+  fi
+  if printf '%s' "$content" | grep -q 'BEGIN .*PRIVATE KEY'; then
+    note "$file — contains a PEM private key"
+  fi
+done
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "  Unstage it (git restore --staged <file>), or commit with --no-verify"
+  echo "  if you are certain the match is a placeholder."
+  echo ""
+  exit 1
+fi
+
+exit 0

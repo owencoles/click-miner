@@ -25,7 +25,7 @@ const dom = {
   inputPort: el('input-port'),
   inputUsername: el('input-username'),
   inputPassword: el('input-password'),
-  inputCookiePath: el('input-cookie-path'),
+  cookieNote: el('cookie-note'),
   inputPayoutAddress: el('input-payout-address'),
 
   fieldHeight: el('field-height'),
@@ -120,8 +120,6 @@ function applyCopy() {
   el('username-label').textContent = COPY.settings.usernameLabel;
   el('password-label').textContent = COPY.settings.passwordLabel;
   dom.inputPassword.placeholder = COPY.settings.passwordPlaceholder;
-  el('cookie-path-label').textContent = COPY.settings.cookiePathLabel;
-  dom.inputCookiePath.placeholder = COPY.settings.cookiePathPlaceholder;
   el('payout-legend').textContent = COPY.settings.payoutLegend;
   el('payout-label').textContent = COPY.settings.payoutLabel;
   dom.inputPayoutAddress.placeholder = COPY.settings.payoutPlaceholder;
@@ -316,8 +314,17 @@ async function loadSettings() {
   dom.inputUsername.value = settings.username || '';
   dom.inputPassword.value = '';
   dom.inputPassword.placeholder = settings.hasPassword ? COPY.settings.passwordUnchangedPlaceholder : COPY.settings.passwordPlaceholder;
-  dom.inputCookiePath.value = settings.cookiePath || '';
   dom.inputPayoutAddress.value = settings.payoutAddress || '';
+
+  // Cookie auth is env-managed (RPC_COOKIE_PATH), so it shows as a note
+  // rather than a field. When it's on, bitcoind ignores user/password.
+  const usingCookie = Boolean(settings.cookiePath);
+  dom.cookieNote.hidden = !usingCookie;
+  if (usingCookie) {
+    dom.cookieNote.textContent = COPY.settings.cookieNote(settings.cookiePath);
+  }
+  dom.inputUsername.disabled = usingCookie;
+  dom.inputPassword.disabled = usingCookie;
   return settings;
 }
 
@@ -329,7 +336,6 @@ dom.settingsForm.addEventListener('submit', async (event) => {
     host: dom.inputHost.value.trim(),
     port: dom.inputPort.value ? Number(dom.inputPort.value) : undefined,
     username: dom.inputUsername.value,
-    cookiePath: dom.inputCookiePath.value.trim(),
     payoutAddress: dom.inputPayoutAddress.value.trim(),
   };
   if (dom.inputPassword.value) {

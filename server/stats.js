@@ -26,8 +26,8 @@ function load() {
 }
 
 function save() {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(STATS_PATH, JSON.stringify(cache, null, 2));
+  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+  fs.writeFileSync(STATS_PATH, JSON.stringify(cache, null, 2), { mode: 0o600 });
 }
 
 export function getStats() {

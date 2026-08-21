@@ -18,6 +18,11 @@ COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV DATA_DIR=/data
+# Binds all interfaces *within the container* — Docker forwards to the
+# container's IP, so a loopback bind here would make `-p` unreachable.
+# The exposure boundary is the port mapping you run with: use
+# `-p 127.0.0.1:3000:3000` to keep it on your own machine.
+ENV HOST=0.0.0.0
 
 RUN mkdir -p /data /var/lib/tor \
   && chown -R node:node /data /var/lib/tor \

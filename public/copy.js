@@ -123,8 +123,13 @@ export const COPY = {
     passwordLabel: 'RPC Password*',
     passwordPlaceholder: '(leave blank to keep current)',
     passwordUnchangedPlaceholder: '(unchanged)',
-    cookiePathLabel: 'Cookie file path',
-    cookiePathPlaceholder: '/home/user/.bitcoin/.cookie',
+    // Cookie auth is configured with the RPC_COOKIE_PATH environment
+    // variable rather than through this form: the server reads that file
+    // and sends its contents to the RPC host as credentials, which is not
+    // something a web request should be able to redirect.
+    cookieNote: (cookiePath) =>
+      `Using cookie authentication from ${cookiePath} (set by RPC_COOKIE_PATH). ` +
+      'Username and password above are ignored.',
 
     payoutLegend: 'Payout address',
     payoutLabel: 'Your Bitcoin address',

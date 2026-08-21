@@ -40,7 +40,7 @@ miner does, one hash at a time.
 
 ```bash
 docker build -t click-miner .
-docker run -p 3000:3000 -v click-miner-data:/data click-miner
+docker run -p 127.0.0.1:3000:3000 -v click-miner-data:/data click-miner
 ```
 
 Then open http://localhost:3000. You'll need your own Bitcoin full node
@@ -99,13 +99,111 @@ by default; override the location with the `DATA_DIR` env var.
 | `RPC_PORT`                | Bitcoin node RPC port                               |
 | `RPC_USER`                | RPC username                                        |
 | `RPC_PASSWORD`            | RPC password                                        |
-| `RPC_COOKIE_PATH`         | Path to node's `.cookie` file (alternative to user/pass) |
+| `RPC_COOKIE_PATH`         | Path to node's `.cookie` file (alternative to user/pass). Env-only by design — see Security below |
+| `RPC_PROTOCOL`            | `http` (default) or `https`                         |
 | `PAYOUT_ADDRESS`          | Address the coinbase output pays                    |
 | `PORT`                    | Port the app's own HTTP server listens on (default `3000`) |
 | `DATA_DIR`                | Where `config.json` is persisted (default `./data`) |
 | `STATUS_POLL_INTERVAL_MS` | How often to poll the node for chain status          |
+| `HOST`                    | Address the app binds (default `127.0.0.1`)         |
+| `ALLOWED_HOSTS`           | Extra comma-separated hostnames permitted in the `Host` header |
+| `ALLOW_PUBLIC_RPC_HOST`   | Set `1` to allow an RPC host outside LAN/tailnet/Tor |
+| `DISABLE_ORIGIN_CHECK`    | Set `1` to disable CSRF/rebinding checks (not recommended) |
 
 See [server/settings.js](server/settings.js) for the authoritative list.
+
+## Security
+
+Click Miner has no login — it assumes whoever can reach its port is the
+node's operator. Everything below follows from keeping that assumption
+true:
+
+- **It binds `127.0.0.1` by default.** Publish it wider only if you mean
+  to (`HOST=0.0.0.0`, or a different `-p` mapping), and understand that
+  anyone who can then reach the port can change your payout address.
+- **Requests must be same-origin, and the `Host` header must be a private
+  name** (localhost, LAN, tailnet, `.local`, `.onion`, or a Docker
+  service name). Together these stop a web page you merely visit from
+  driving the API, whether directly or via DNS rebinding. If your setup
+  needs another hostname — a Tailscale `*.ts.net` name, say — add it to
+  `ALLOWED_HOSTS`.
+- **`config.json` is written `0600` inside a `0700` directory**, because
+  it holds your RPC password in plaintext. Permissions are re-applied on
+  every save and at startup, so a config from an older version gets
+  tightened automatically.
+- **Cookie auth is set with `RPC_COOKIE_PATH` only**, never through the
+  web form. The server reads that file and sends its contents to the RPC
+  host as credentials — a path no HTTP request should be able to choose.
+- **The RPC host is confined** to loopback, LAN, tailnet, or `.onion`.
+  Set `ALLOW_PUBLIC_RPC_HOST=1` if your node genuinely lives on a public
+  address.
+
+### Where your credentials live
+
+Nothing in this repository contains credentials, and nothing ever should.
+`data/config.json` is *runtime state*, not source: it is created the
+moment you save settings in the UI, it is gitignored, and it is written
+`0600`. There is no way to persist what you typed into a web form without
+writing it somewhere — a process cannot set its own environment
+variables — so a locked-down file is what that "somewhere" is.
+
+Environment variables are supported too, and take precedence over the
+file. That is how Umbrel and Start9 supply RPC details, and on those
+platforms **no password is ever written to disk by this app at all**.
+
+Env vars are not automatically safer than a `0600` file, though — they
+are visible in `docker inspect`, in `/proc/<pid>/environ`, and in your
+shell history. Ranked best to worst:
+
+1. **Cookie auth** (`RPC_COOKIE_PATH`) — no password stored anywhere. Best
+   when the node is on the same machine or the cookie file can be mounted.
+2. **Platform injection** (Umbrel, Start9) — credentials never touch this
+   app's config file.
+3. **`config.json` at `0600`** — the default for desktop use. Fine, as
+   long as it stays out of git.
+
+A `.githooks/pre-commit` guard ships with the repo as a backstop against
+committing any of it. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+### Hardening your node against a leaked credential
+
+This is the one that matters most, and it is set on **bitcoind**, not
+here. Click Miner only ever calls three RPC methods, so the user it
+connects as does not need any others. Restrict it in `bitcoin.conf`:
+
+```
+rpcwhitelist=clickminer:getblocktemplate,submitblock,getblockchaininfo
+rpcwhitelistdefault=1
+```
+
+With that in place, a leaked Click Miner credential cannot touch your
+wallet, cannot move funds, and cannot stop your node — the three calls it
+can make are all read-only or block submission. Create a dedicated
+`rpcauth` user for this app rather than reusing your main one.
+
+Two more worth doing:
+
+- **Prefer `.onion` or Tailscale for a remote node.** HTTP Basic auth
+  sends credentials in cleartext, so a plain-HTTP hop across a LAN is
+  readable by anything on that network. A `.onion` host is encrypted and
+  authenticated by the onion service itself; `RPC_PROTOCOL=https` covers
+  nodes behind a TLS proxy.
+- **Never expose bitcoind's RPC port to the internet.** Click Miner
+  reaches it over Tor or your LAN precisely so you don't have to.
+
+### If you think a credential leaked
+
+1. Rotate the RPC password on the node (Umbrel: Bitcoin Node → Advanced
+   Settings; or regenerate `rpcauth` in `bitcoin.conf` and restart).
+2. Re-enter it in Click Miner's Settings tab.
+3. If a `.onion` address was exposed, rotate the hidden service too — the
+   address is how someone reaches your node at all.
+4. Check the node for unexpected activity: `getconnectioncount`, recent
+   wallet transactions, and whether any unknown wallet was loaded.
 
 ## How it works
 

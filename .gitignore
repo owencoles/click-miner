@@ -1,4 +1,12 @@
 node_modules/
-data/
 *.log
 .DS_Store
+
+# Runtime state, including your node's RPC password. Never commit this.
+# The pre-commit hook in .githooks/ is a backstop if these are bypassed —
+# enable it with: git config core.hooksPath .githooks
+data/
+data/config.json
+*.cookie
+.env
+.env.*

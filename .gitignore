@@ -5,7 +5,12 @@ node_modules/
 # Runtime state, including your node's RPC password. Never commit this.
 # The pre-commit hook in .githooks/ is a backstop if these are bypassed —
 # enable it with: git config core.hooksPath .githooks
-data/
+#
+# data/* (not data/) + the negation below: Umbrel App Store packages must
+# commit their bind-mount source directory even when empty, so the mount
+# has somewhere to land on first install (see data/.gitkeep).
+data/*
+!data/.gitkeep
 data/config.json
 *.cookie
 .env

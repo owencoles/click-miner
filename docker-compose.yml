@@ -17,10 +17,12 @@ services:
       APP_PORT: 3000
 
   app:
-    # `build: .` works for local/community installs. A real App Store
-    # submission would typically instead reference a pre-built, digest-
-    # pinned image (e.g. yourname/click-miner:0.1.0@sha256:...) published
-    # to a registry, per Umbrel's app submission guidelines.
+    # `build: .` works for local/community installs, but official App
+    # Store submissions can't build from source — they need a pinned,
+    # multi-arch image. .github/workflows/docker-publish.yml builds and
+    # pushes one to GHCR on a `v*` tag; once that's run at least once,
+    # replace the two lines below with:
+    #   image: ghcr.io/owencoles/click-miner:0.1.0@sha256:<digest from the workflow run>
     build: .
     image: click-miner:latest
     restart: on-failure

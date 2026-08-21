@@ -12,18 +12,23 @@
 # externally-hosted images, not files bundled in the package) and prefix
 # `id` with your store's id.
 #
-# Official-submission notes (see README's "Submitting to the official
-# Umbrel App Store" section for the full checklist):
+# Official-submission notes:
 #   - Omit `icon`. Official icons are hosted with the App Store's other
 #     image assets outside the package repo; icon.svg (repo root, 1024px
 #     Click Miner mark) is submitted via the PR body instead, as source art.
 #   - Use `gallery: []`. The Umbrel team adds gallery images before merge
 #     from screenshots attached to the PR body — see docs/screenshots/ in
 #     this repo. Do not commit gallery images to the package itself.
+#   - `port: 3019` was picked by cross-checking both manifest `port:`
+#     values and raw docker-compose host-published ports across every app
+#     in a clone of getumbrel/umbrel-apps (as of 2026-08) — the linter
+#     catches manifest-vs-manifest collisions but not manifest-vs-raw-port
+#     ones, so both had to be checked by hand. Re-verify before submitting
+#     if much time has passed.
 #   - `docker-compose.yml`'s `build: .` must become a pinned, multi-arch,
 #     publicly pullable image (registry/repo:version@sha256:<digest>)
-#     before this is submission-ready — App Store packages can't build
-#     from source. Not yet done; see README.
+#     before this is submission-ready. See
+#     .github/workflows/docker-publish.yml, which builds and pushes one.
 
 manifestVersion: 1
 id: click-miner
@@ -48,7 +53,7 @@ dependencies:
 repo: "https://github.com/owencoles/Click-Miner"
 support: "https://github.com/owencoles/Click-Miner/issues"
 
-port: 3000
+port: 3019
 gallery: []
 path: ""
 

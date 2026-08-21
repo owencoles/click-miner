@@ -26,6 +26,12 @@ note() {
 
 for file in $staged; do
   case "$file" in
+    data/.gitkeep|data/*/.gitkeep)
+      # Empty placeholder, not runtime state. Umbrel App Store packages
+      # must commit their bind-mount source dir even when empty, so this
+      # one file under data/ is intentionally tracked.
+      continue
+      ;;
     data/*|*/data/config.json|*.cookie|.env|.env.*)
       note "$file — runtime config or credential file, should never be committed"
       continue

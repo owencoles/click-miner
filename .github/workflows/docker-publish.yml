@@ -1,0 +1,63 @@
+# Builds and publishes the multi-arch (amd64 + arm64) Click Miner image to
+# GHCR. Umbrel App Store packages can't build from source (no `build:` in
+# docker-compose.yml) — they need a pinned, publicly pullable image, which
+# is what this produces. Triggered by pushing a `v*` tag, or manually.
+#
+# After a run, the resulting digest is printed in the job summary — use it
+# to pin docker-compose.yml's `app` service to
+# ghcr.io/OWNER/click-miner:VERSION@sha256:<digest>.
+#
+# First run only: GHCR packages default to private. Go to
+# github.com/users/OWNER/packages/container/click-miner/settings and make
+# it public, or the image won't be pullable by Umbrel installs.
+
+name: Publish Docker image
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-qemu-action@v3
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/click-miner
+          tags: |
+            type=semver,pattern={{version}}
+            type=raw,value=latest
+
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - run: |
+          echo "### Published image" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "ghcr.io/${{ github.repository_owner }}/click-miner@${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "Pin docker-compose.yml's app image to this digest, with the version tag kept alongside it for readability." >> "$GITHUB_STEP_SUMMARY"

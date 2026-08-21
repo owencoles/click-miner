@@ -30,7 +30,7 @@ id: click-miner
 category: bitcoin
 name: Click Miner
 version: "0.1.0"
-tagline: Be your own miner (lol).
+tagline: The world's least efficient Bitcoin miner
 description: >-
   A free, open-source, educational manual Bitcoin miner. Click a button and
   the app assembles one real block header from your own node's live data,

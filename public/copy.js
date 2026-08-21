@@ -50,7 +50,7 @@ export const COPY = {
     lastHashLabel: 'Last hash',
     lastHashPlaceholder: '--',
 
-    hashrateWindowTitle: "Your share of the Bitcoin network's hash rate",
+    hashrateWindowTitle: "Share of network hashrate:",
     hashrateSharePlaceholder: '--',
     hashrateShareCaption: (percentText) => percentText,
 
@@ -98,7 +98,7 @@ export const COPY = {
     refreshFetching: 'fetching fresh template…',
     refreshDone: '✓ refreshed',
 
-    logWindowTitle: 'Recent attempts',
+    logWindowTitle: 'Recent attempts:',
     logLine: (attempts, nonce, hashPrefix, leadingZeroBits) =>
       `#${attempts} nonce=${nonce} → ${hashPrefix}… (${leadingZeroBits} zero bits)`,
     logHitAccepted: '*** BLOCK ACCEPTED BY YOUR NODE ***',
@@ -115,12 +115,12 @@ export const COPY = {
       'private key.',
 
     rpcLegend: 'bitcoind RPC',
-    hostLabel: 'Host',
-    hostPlaceholder: '127.0.0.1',
-    portLabel: 'Port',
-    portPlaceholder: '8332',
-    usernameLabel: 'RPC Username',
-    passwordLabel: 'RPC Password',
+    hostLabel: 'Host*',
+    hostPlaceholder: 'IP or .onion address',
+    portLabel: 'Port*',
+    portPlaceholder: '9332',
+    usernameLabel: 'RPC Username*',
+    passwordLabel: 'RPC Password*',
     passwordPlaceholder: '(leave blank to keep current)',
     passwordUnchangedPlaceholder: '(unchanged)',
     cookiePathLabel: 'Cookie file path',

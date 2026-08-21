@@ -18,8 +18,8 @@ connected node, computes a single SHA256d hash against a chosen nonce, and
 checks it against the current network target.
 
 It's not a real mining tool in any competitive sense — it will essentially
-never find a block. It's a toy / educational visualization of exactly what a
-miner does, one hash at a time. Be your own miner (lol).
+never find a block. It's a fun educational visualization of exactly what a
+miner does, one hash at a time.
 
 ## Features
 

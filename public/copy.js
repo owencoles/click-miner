@@ -310,8 +310,13 @@ export const COPY = {
 
   footer: {
     githubLinkText: 'Click Miner on GitHub',
-    // No link/logic yet — just the ask. Bitcoin Lightning donations are
-    // planned as a follow-up.
-    donationText: 'Enjoying Click Miner? Zaps are much appreciated!',
+    lightningLinkText: '⚡ Tip with Lightning',
+  },
+
+  lightning: {
+    modalTitle: 'TIP.EXE — send a zap',
+    caption: 'Enjoying Click Miner? Zaps are much appreciated!',
+    copyButton: 'COPY ADDRESS',
+    copyDone: '✓ COPIED',
   },
 };

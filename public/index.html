@@ -190,9 +190,27 @@
 
   <footer class="page-footer">
     <p><a href="https://github.com/owencoles/Click-Miner" target="_blank" rel="noopener noreferrer" id="footer-github-link"></a></p>
-    <p id="footer-donation-text"></p>
+    <p><a href="#" id="footer-lightning-link"></a></p>
   </footer>
 
+  <div class="modal-overlay hidden" id="lightning-modal">
+    <div class="window modal-window">
+      <div class="window-titlebar">
+        <span id="lightning-modal-title"></span>
+        <button type="button" class="modal-close" id="lightning-modal-close" aria-label="Close">✕</button>
+      </div>
+      <div class="window-body lightning-modal-body">
+        <p class="help-text small" id="lightning-modal-caption"></p>
+        <div class="lightning-qr" id="lightning-qr"></div>
+        <div class="lightning-address-row">
+          <code class="lightning-address" id="lightning-address-text"></code>
+          <button type="button" class="btn" id="lightning-copy-button"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="qrcode.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

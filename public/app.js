@@ -10,6 +10,7 @@ import { COPY } from './copy.js';
 
 const AUTOCLICK_INTERVAL_MS = 1000; // once per second — capped, never competitive
 const WS_RECONNECT_DELAY_MS = 3000;
+const LIGHTNING_ADDRESS = 'rubyred810@walletofsatoshi.com';
 
 const el = (id) => document.getElementById(id);
 
@@ -49,6 +50,13 @@ const dom = {
   logScreen: el('log-screen'),
 
   hashrateShareCaption: el('hashrate-share-caption'),
+
+  footerLightningLink: el('footer-lightning-link'),
+  lightningModal: el('lightning-modal'),
+  lightningModalClose: el('lightning-modal-close'),
+  lightningQr: el('lightning-qr'),
+  lightningAddressText: el('lightning-address-text'),
+  lightningCopyButton: el('lightning-copy-button'),
 };
 
 let candidate = null;
@@ -135,7 +143,12 @@ function applyCopy() {
   }
 
   el('footer-github-link').textContent = COPY.footer.githubLinkText;
-  el('footer-donation-text').textContent = COPY.footer.donationText;
+  dom.footerLightningLink.textContent = COPY.footer.lightningLinkText;
+
+  el('lightning-modal-title').textContent = COPY.lightning.modalTitle;
+  el('lightning-modal-caption').textContent = COPY.lightning.caption;
+  dom.lightningAddressText.textContent = LIGHTNING_ADDRESS;
+  dom.lightningCopyButton.textContent = COPY.lightning.copyButton;
 }
 
 // ---------------------------------------------------------------------
@@ -162,6 +175,61 @@ function showTab(name) {
 for (const btn of tabButtons) {
   btn.addEventListener('click', () => showTab(btn.dataset.tab));
 }
+
+// ---------------------------------------------------------------------
+// lightning tip modal
+// ---------------------------------------------------------------------
+
+// Rendered once and cached — the address is fixed, so there's no reason
+// to regenerate the QR SVG on every open.
+let lightningQrRendered = false;
+
+function renderLightningQr() {
+  if (lightningQrRendered) return;
+  lightningQrRendered = true;
+  const qr = qrcode(0, 'M');
+  qr.addData(LIGHTNING_ADDRESS);
+  qr.make();
+  dom.lightningQr.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 8 });
+}
+
+function openLightningModal() {
+  renderLightningQr();
+  dom.lightningModal.classList.remove('hidden');
+}
+
+function closeLightningModal() {
+  dom.lightningModal.classList.add('hidden');
+}
+
+dom.footerLightningLink.addEventListener('click', (event) => {
+  event.preventDefault();
+  openLightningModal();
+});
+
+dom.lightningModalClose.addEventListener('click', closeLightningModal);
+
+dom.lightningModal.addEventListener('click', (event) => {
+  if (event.target === dom.lightningModal) closeLightningModal();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !dom.lightningModal.classList.contains('hidden')) {
+    closeLightningModal();
+  }
+});
+
+dom.lightningCopyButton.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(LIGHTNING_ADDRESS);
+    dom.lightningCopyButton.textContent = COPY.lightning.copyDone;
+    setTimeout(() => {
+      dom.lightningCopyButton.textContent = COPY.lightning.copyButton;
+    }, 1500);
+  } catch {
+    // Clipboard API unavailable/denied — the address is still selectable text.
+  }
+});
 
 // ---------------------------------------------------------------------
 // helpers

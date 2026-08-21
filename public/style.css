@@ -652,6 +652,96 @@ legend {
   font-style: italic;
 }
 
+/* ---------- lightning tip modal ---------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal-window {
+  width: 100%;
+  max-width: 320px;
+}
+
+.modal-close {
+  background: var(--chrome);
+  border-top: 2px solid var(--chrome-light);
+  border-left: 2px solid var(--chrome-light);
+  border-right: 2px solid var(--chrome-darker);
+  border-bottom: 2px solid var(--chrome-darker);
+  color: #101010;
+  font-weight: bold;
+  font-size: 11px;
+  width: 20px;
+  height: 20px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.modal-close:active {
+  border-top: 2px solid var(--chrome-darker);
+  border-left: 2px solid var(--chrome-darker);
+  border-right: 2px solid var(--chrome-light);
+  border-bottom: 2px solid var(--chrome-light);
+}
+
+.lightning-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.lightning-modal-body .help-text {
+  margin: 0;
+}
+
+.lightning-qr {
+  background: #fff;
+  padding: 8px;
+  border-top: 2px solid var(--chrome-darker);
+  border-left: 2px solid var(--chrome-darker);
+  border-right: 2px solid var(--chrome-light);
+  border-bottom: 2px solid var(--chrome-light);
+  line-height: 0;
+}
+
+.lightning-qr svg {
+  display: block;
+  width: 200px;
+  height: 200px;
+}
+
+.lightning-address-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.lightning-address {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--chrome-light);
+  padding: 4px 6px;
+  border-radius: 2px;
+  word-break: break-all;
+}
+
 /* ---------- responsive ---------- */
 
 @media (max-width: 600px) {

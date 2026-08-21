@@ -27,6 +27,9 @@
   --font-heading: "Times New Roman", Times, serif;
   --font-mono: "Courier New", Courier, monospace;
   --font-ui: Tahoma, Geneva, Verdana, sans-serif;
+
+  --page-bg: #eef0f2;
+  --font-title: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
 }
 
 * {
@@ -41,7 +44,12 @@ html, body {
 body {
   font-family: var(--font-ui);
   color: #101010;
-  background-color: #ffffff;
+  background-color: var(--page-bg);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.9) 0 1px,
+    rgba(0, 0, 0, 0.035) 1px 2px
+  );
   min-height: 100vh;
 }
 
@@ -81,19 +89,20 @@ body {
 }
 
 .title {
-  font-family: var(--font-heading);
-  font-size: 44px;
+  font-family: var(--font-title);
+  font-size: 58px;
+  line-height: 1;
+  letter-spacing: 1px;
   color: var(--title-start);
-  text-shadow: 2px 2px 0 var(--chrome-light), 3px 3px 0 var(--chrome-darker);
+  text-shadow: 2px 2px 0 var(--chrome-light), 4px 4px 0 var(--chrome-darker);
   margin: 0;
-  letter-spacing: 2px;
 }
 
 .tagline {
   font-family: var(--font-display);
-  color: var(--chrome-darker);
+  color: #2f3538;
   font-size: 18px;
-  margin: 4px 0 0;
+  margin: 8px 0 0;
 }
 
 /* ---------- tab bar (one connected strip — equal-width tabs, no
@@ -320,9 +329,10 @@ legend {
 }
 
 .btn-huge {
-  font-family: var(--font-display);
-  font-size: 26px;
-  padding: 18px 30px;
+  font-family: var(--font-title);
+  font-size: 34px;
+  letter-spacing: 2px;
+  padding: 16px 34px;
   background: linear-gradient(180deg, var(--accent-orange), #c65e00);
   color: #fff;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
@@ -745,7 +755,7 @@ legend {
 /* ---------- responsive ---------- */
 
 @media (max-width: 600px) {
-  .title { font-size: 30px; }
-  .btn-huge { font-size: 20px; padding: 14px 20px; }
+  .title { font-size: 40px; }
+  .btn-huge { font-size: 26px; padding: 14px 22px; }
   .tab-btn { padding: 8px 6px; font-size: 12px; }
 }

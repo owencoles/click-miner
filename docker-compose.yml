@@ -17,14 +17,14 @@ services:
       APP_PORT: 3000
 
   app:
-    # `build: .` works for local/community installs, but official App
-    # Store submissions can't build from source — they need a pinned,
-    # multi-arch image. .github/workflows/docker-publish.yml builds and
-    # pushes one to GHCR on a `v*` tag; once that's run at least once,
-    # replace the two lines below with:
-    #   image: ghcr.io/owencoles/click-miner:0.1.0@sha256:<digest from the workflow run>
-    build: .
-    image: click-miner:latest
+    # Multi-arch (linux/amd64 + linux/arm64) image built and pushed by
+    # .github/workflows/docker-publish.yml from the v0.1.0 tag. Pinned to
+    # the manifest-list digest, not an arch-specific one, per Umbrel's
+    # image-pinning rule. Bump the tag, re-run the workflow, and update
+    # this line for future releases. (This file is Umbrel-only — plain
+    # desktop use builds straight from the Dockerfile, see the README's
+    # "Quick start" section, so removing `build:` here doesn't affect it.)
+    image: ghcr.io/owencoles/click-miner:0.1.0@sha256:8070ccc2c169a267e0e11143fc026c9c1f7b862c07046e18963b7030243df675
     restart: on-failure
     stop_grace_period: 30s
     environment:

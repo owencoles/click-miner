@@ -40,10 +40,18 @@ description: >-
   A free, open-source, educational manual Bitcoin miner. Click a button and
   the app assembles one real block header from your own node's live data,
   computes a single SHA256d hash against the current network target, and
-  shows you exactly what mining does — one hash at a time. On the (nearly
-  impossible) chance you find a block, the reward pays out to your own
-  configured address. Not a pool, not competitive, not financial advice —
-  just you against 2^256.
+  shows you exactly what mining does — one hash at a time.
+
+
+  Requires an installed Bitcoin node app (Bitcoin Core or Bitcoin Knots) —
+  RPC connection details are filled in automatically from it. After
+  install, open the Settings tab and enter only your payout address (any
+  address type works); that's the only setup step. On the (nearly
+  impossible) chance you find a block, the reward pays out there directly.
+
+
+  Not a pool, not competitive, not financial advice — just you against
+  2^256.
 releaseNotes: "Initial release."
 
 developer: Click Miner Contributors

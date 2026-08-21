@@ -36,6 +36,14 @@ miner does, one hash at a time.
 - Optional slow "auto-click" loop, live leading-zero-bits-vs-target
   indicator, and short inline explanations of what each field means.
 
+## How it works
+
+Click Miner talks to your node's JSON-RPC interface to fetch a block
+template, builds a coinbase transaction paying your configured address,
+computes the merkle root and assembles an 80-byte header, then runs a single
+SHA256d hash over it per click (or per auto-click tick) and compares the
+result against the network target.
+
 ## Quick start (Docker)
 
 ```bash
@@ -205,16 +213,7 @@ Two more worth doing:
 4. Check the node for unexpected activity: `getconnectioncount`, recent
    wallet transactions, and whether any unknown wallet was loaded.
 
-## How it works
-
-Click Miner talks to your node's JSON-RPC interface to fetch a block
-template, builds a coinbase transaction paying your configured address,
-computes the merkle root and assembles an 80-byte header, then runs a single
-SHA256d hash over it per click (or per auto-click tick) and compares the
-result against the network target. Full design notes, goals, and non-goals
-are in [CLICK-MINER-SPEC.md](CLICK-MINER-SPEC.md).
-
-## Security & privacy
+## Privacy
 
 - This app **never** handles private keys — only a public payout address.
 - No analytics, tracking, or calls to any third party — only to the node

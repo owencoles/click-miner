@@ -3,6 +3,11 @@
 # needed here (gallery, submitter, submission) are omitted rather than
 # faked; add them when this is actually submitted to the app store.
 
+# The app icon is a sibling file rather than a manifest field: Umbrel's app
+# store loads `icon.svg` from the app directory next to this file. icon.svg
+# here is the 1024px Click Miner mark (repo root — copy it alongside this
+# manifest when submitting to an app store repo).
+
 manifestVersion: 1
 id: click-miner
 category: bitcoin
@@ -19,9 +24,9 @@ description: >-
   just you against 2^256.
 releaseNotes: "Initial release."
 developer: Click Miner Contributors
-website: ""
-repo: ""
-support: ""
+website: "https://github.com/owencoles/Click-Miner"
+repo: "https://github.com/owencoles/Click-Miner"
+support: "https://github.com/owencoles/Click-Miner/issues"
 port: 3000
 gallery: []
 path: ""

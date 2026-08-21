@@ -20,10 +20,10 @@ title: Click Miner
 version: 0.1.0
 release-notes: Initial release.
 license: MIT
-wrapper-repo: ""
-upstream-repo: ""
-support-site: ""
-marketing-site: ""
+wrapper-repo: "https://github.com/owencoles/Click-Miner"
+upstream-repo: "https://github.com/owencoles/Click-Miner"
+support-site: "https://github.com/owencoles/Click-Miner/issues"
+marketing-site: "https://github.com/owencoles/Click-Miner"
 description:
   short: A free, open-source, educational manual Bitcoin miner.
   long: >
@@ -34,7 +34,7 @@ description:
     find a block goes to your own configured address.
 assets:
   license: LICENSE
-  icon: ""
+  icon: icon.png
   instructions: ""
 main:
   type: docker

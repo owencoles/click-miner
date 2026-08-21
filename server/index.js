@@ -32,6 +32,7 @@ const MIME_TYPES = {
   '.png': 'image/png',
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',
+  '.webmanifest': 'application/manifest+json',
 };
 
 // ---------------------------------------------------------------------

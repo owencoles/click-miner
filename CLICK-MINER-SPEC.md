@@ -12,8 +12,6 @@ It is **not** a real mining tool in any competitive sense — it will essentiall
 never find a block. It's a toy / educational visualization of exactly what a miner
 does, one hash at a time, built with a wink at how hopeless solo manual mining is.
 
-**Tagline energy:** tongue-in-cheek, Bitcoin-ethos, "be your own miner (lol)."
-
 ## 2. Goals
 
 - Show, in real time and in full, every value involved in mining a block:

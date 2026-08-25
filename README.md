@@ -193,42 +193,6 @@ committing any of it. Enable it once per clone:
 git config core.hooksPath .githooks
 ```
 
-### Hardening your node against a leaked credential
-
-This is the one that matters most, and it is set on **bitcoind**, not
-here. Click Miner only ever calls three RPC methods, so the user it
-connects as does not need any others. Restrict it in `bitcoin.conf`:
-
-```
-rpcwhitelist=clickminer:getblocktemplate,submitblock,getblockchaininfo
-rpcwhitelistdefault=1
-```
-
-With that in place, a leaked Click Miner credential cannot touch your
-wallet, cannot move funds, and cannot stop your node — the three calls it
-can make are all read-only or block submission. Create a dedicated
-`rpcauth` user for this app rather than reusing your main one.
-
-Two more worth doing:
-
-- **Prefer `.onion` or Tailscale for a remote node.** HTTP Basic auth
-  sends credentials in cleartext, so a plain-HTTP hop across a LAN is
-  readable by anything on that network. A `.onion` host is encrypted and
-  authenticated by the onion service itself; `RPC_PROTOCOL=https` covers
-  nodes behind a TLS proxy.
-- **Never expose bitcoind's RPC port to the internet.** Click Miner
-  reaches it over Tor or your LAN precisely so you don't have to.
-
-### If you think a credential leaked
-
-1. Rotate the RPC password on the node (Umbrel: Bitcoin Node → Advanced
-   Settings; or regenerate `rpcauth` in `bitcoin.conf` and restart).
-2. Re-enter it in Click Miner's Settings tab.
-3. If a `.onion` address was exposed, rotate the hidden service too — the
-   address is how someone reaches your node at all.
-4. Check the node for unexpected activity: `getconnectioncount`, recent
-   wallet transactions, and whether any unknown wallet was loaded.
-
 ## Privacy
 
 - This app **never** handles private keys — only a public payout address.

@@ -47,8 +47,7 @@ success state.</sub>
   generates, or touches a private key — you supply a payout address only.
 - **Zero telemetry.** No analytics, no third-party calls — the only network
   request this app makes is to the Bitcoin node you point it at.
-- **Runs anywhere:** plain Docker on macOS/Windows/Linux, Umbrel, or (soon)
-  Start9 — same image everywhere.
+- **Runs anywhere:** plain Docker on macOS/Windows/Linux, Umbrel, or Start9 — same image everywhere.
 - Optional slow "auto-click" loop, live leading-zero-bits-vs-target
   indicator, and short inline explanations of what each field means.
 
@@ -96,14 +95,11 @@ app framework.
 
 ## Running on Start9
 
-`start9/manifest.yaml` is a work-in-progress StartOS package manifest. Its
-top-level fields are verified against a real shipped StartOS package, but
-the dependency/RPC-credential wiring to StartOS's bitcoind package is **not
-yet verified** — StartOS's mechanism for this is more involved than
-Umbrel's static env-var injection, and needs confirming against the current
-start-sdk docs and a working example before this can actually be packaged.
-See the comment at the top of that file for specifics. Contributions
-welcome.
+The StartOS package lives in its own repo:
+[owencoles/click-miner-startos](https://github.com/owencoles/click-miner-startos).
+It depends on Start9's Bitcoin Core package and reads its RPC cookie directly,
+so there is no RPC setup — only your payout address. Status: pending
+submission to the Start9 community registry.
 
 ## Development
 
@@ -172,7 +168,7 @@ writing it somewhere — a process cannot set its own environment
 variables — so a locked-down file is what that "somewhere" is.
 
 Environment variables are supported too, and take precedence over the
-file. That is how Umbrel and Start9 supply RPC details, and on those
+file. That is how Umbrel supplies RPC details (Start9 uses the cookie file instead), and on those
 platforms **no password is ever written to disk by this app at all**.
 
 Env vars are not automatically safer than a `0600` file, though — they
@@ -207,8 +203,7 @@ git config core.hooksPath .githooks
 ## Contributing
 
 Issues and PRs are welcome — see the [open issues](../../issues) for ideas,
-especially around Start9 packaging (see above) and additional address
-types. This is deliberately a small, dependency-light, plain HTML/CSS/JS +
+especially around additional address types. This is deliberately a small, dependency-light, plain HTML/CSS/JS +
 Node.js codebase with no build step; please keep contributions in that
 spirit.
 
